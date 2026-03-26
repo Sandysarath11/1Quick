@@ -2,70 +2,39 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-      # Checkout code
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
-      
-      # Setup Node.js
-      - name: Setup Node.js
+
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
-      
-      # Setup Java
+
+      - name: Install Dependencies
+        run: npm install
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-      
-      # Install dependencies
-      - name: Install dependencies
-        run: npm install
-      
-      # Install Expo CLI
-      - name: Install Expo CLI
-        run: npm install -g expo-cli
-      
-      # Setup Android SDK
-      - name: Setup Android SDK
-        run: |
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          cd $HOME/android-sdk/cmdline-tools
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip -q commandlinetools-linux-9477386_latest.zip
-          mv cmdline-tools latest
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin
-          echo y | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-          echo y | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "PATH=$PATH" >> $GITHUB_PATH
-      
-      # Prebuild native code
-      - name: Prebuild
-        run: npx expo prebuild
-      
-      # Build APK
+
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
-      
-      # Upload APK as artifact (v4)
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: android/app/build/outputs/apk/release/app-release.apk
-          compression-level: 0
-          if-no-files-found: error
